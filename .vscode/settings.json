@@ -1,0 +1,6 @@
+{
+    "files.autoSave": "afterDelay",
+    "tabnine.codeLensEnabled": false,
+    "tabnine.completionsLoadingIndicatorEnabled": false,
+    "tabnine.useProxySupport": false
+}
