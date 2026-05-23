@@ -178,7 +178,7 @@ onClick={() => handleNetworkChange(net.id)}
 style={{
 display: 'flex',
 justifyContent: 'space-between',
-alignItems: 'center',
+alignItems: 'left',
 padding: '10px 14px',
 border: `1px solid ${form.network === net.id ? selectedCoin?.color : 'var(--glass-border)'}`,
 borderRadius: 8,
