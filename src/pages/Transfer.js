@@ -189,7 +189,7 @@ color: 'white',
 textAlign: 'left',
 }}
 >
-<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+<div style={{ display: 'flex', alignItems: 'left', gap: 8 }}>
 <div style={{
 width: 8, height: 8, borderRadius: '50%',
 background: form.network === net.id ? selectedCoin?.color : 'var(--glass-border)',
