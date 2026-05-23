@@ -189,9 +189,9 @@ color: 'white',
 textAlign: 'left',
 }}
 >
-<div style={{ display: 'flex', alignItems: 'left', gap: 3 }}>
+<div style={{ display: 'flex', alignItems: 'left', gap: 8 }}>
 <div style={{
-width: 3, height: 8, borderRadius: '50%',
+width: 8, height: 8, borderRadius: '50%',
 background: form.network === net.id ? selectedCoin?.color : 'var(--glass-border)',
 transition: 'background 0.2s',
 }} />
@@ -244,7 +244,7 @@ return (
     <motion.div key="send" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
 
       {step === 1 && (
-        <div className="glass-card" style={{ padding: 32 }}>
+        <div className="glass-card" style={{ padding: 10 }}>
           <h3 className="font-orbitron" style={{ fontSize: 16, marginBottom: 24 }}>↗️ SEND CRYPTO</h3>
 
           <CoinSelector />
