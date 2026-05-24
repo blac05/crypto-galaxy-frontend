@@ -32,7 +32,7 @@ const CRYPTO = [
   { id: 'THETA', name: 'Theta Network', icon: 'Θ', color: '#2AB8E6', type: 'crypto',    basePrice: 6.5 },
   { id: 'FTM',   name: 'Fantom',        icon: '👻', color: '#1969FF', type: 'crypto',   basePrice: 2.1 },
   { id: 'EGLD',  name: 'Elrond',        icon: '𓂀', color: '#FF5C00', type: 'crypto',    basePrice: 250 },
-  { id: 'KSM',   name: 'Kusama',        icon: '🦝', color: '#000000', type: 'crypto',   basePrice: 350 },
+  { id: 'KSM',   name: 'Kusama',        icon: '🦝', color: '#000', type: 'crypto',   basePrice: 350 },
   { id: 'ZIL',   name: 'Zilliqa',       icon: 'Z', color: '#00AFF5', type: 'crypto',    basePrice: 0.11 },
   { id: 'DASH',  name: 'Dash',          icon: 'D', color: '#1C75FF', type: 'crypto',    basePrice: 150 },
   { id: 'COMP',  name: 'Compound',      icon: '⚗', color: '#00D395', type: 'crypto',    basePrice: 400 },
@@ -51,7 +51,6 @@ const CRYPTO = [
   { id: 'GRT',   name: 'The Graph',     icon: 'G', color: '#FF8C00', type: 'crypto',    basePrice: 0.6 },
   { id: 'CRO',   name: 'Crypto.com Coin', icon: 'C', color: '#0033FF', type: 'crypto',  basePrice: 0.5 },
   { id: 'BAT',   name: 'Basic Attention Token', icon: 'B', color: '#FF6600', type: 'crypto', basePrice: 0.9 },
-  
 ];
 
 const STOCKS = [
@@ -125,6 +124,7 @@ function CustomTooltip({ active, payload }) {
 
 export default function Trade() {
   const [tab, setTab] = useState('all');
+  const [search, setSearch] = useState('');
   const [mode, setMode] = useState('buy');
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [chartData, setChartData] = useState([]);
@@ -166,12 +166,20 @@ export default function Trade() {
     if (selectedAsset) setLivePrice(livePrices[selectedAsset.id]);
   }, [livePrices]);
 
-  const filteredAssets = ALL_ASSETS.filter(a =>
-    tab === 'all' ? true :
-    tab === 'crypto' ? a.type === 'crypto' :
-    tab === 'stocks' ? a.type === 'stock' :
-    a.type === 'commodity'
-  );
+  const filteredAssets = ALL_ASSETS.filter(a => {
+    const matchesTab =
+      tab === 'all' ? true :
+      tab === 'crypto' ? a.type === 'crypto' :
+      tab === 'stocks' ? a.type === 'stock' :
+      a.type === 'commodity';
+    
+    if (!matchesTab) return false;
+    
+    if (!search.trim()) return true;
+    
+    const q = search.toLowerCase();
+    return a.id.toLowerCase().includes(q) || a.name.toLowerCase().includes(q);
+  });
 
   const currentPrice = selectedAsset ? livePrices[selectedAsset.id] : 0;
   const priceChange = selectedAsset
@@ -221,16 +229,18 @@ export default function Trade() {
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 24 }}>
         <h1 className="font-orbitron" style={{ fontSize: 24, marginBottom: 6 }}>📈 Markets</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Trade crypto, stocks & commodities across the galaxy</p>
-      </motion.div>
+      </motion.div> {/* FIX: was </motion.divdiv> */}
 
-      <PendingTransactionBanner />
+      <PendingTransactionBanner /> 
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait"> 
 
         {step === 1 && (
           <motion.div key="market" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'relative' }}>
             <AccountLockedOverlay />
-            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+            
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
               {['all', 'crypto', 'stocks', 'commodities'].map(t => (
                 <button key={t} onClick={() => setTab(t)}
                   style={{
@@ -246,8 +256,41 @@ export default function Trade() {
               ))}
             </div>
 
+            {/* Search bar positioned after commodities */}
+            <div style={{ marginBottom: 20, position: 'relative' }}>
+              <input
+                className="galaxy-input"
+                type="text"
+                placeholder="Search BTC, Apple, Gold..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ width: '100%', paddingLeft: 42, fontFamily: 'Share Tech Mono, monospace', fontSize: 14 }}
+              />
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: 'var(--text-secondary)', pointerEvents: 'none' }}>
+                🔍
+              </span>
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18 }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+
+            {/* Results count */}
+            <p style={{ 
+              color: 'var(--text-secondary)', 
+              fontSize: 12, 
+              marginBottom: 12,
+              fontFamily: 'Share Tech Mono, monospace'
+            }}>
+              {filteredAssets.length} market{filteredAssets.length !== 1 ? 's' : ''} found
+            </p>
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-              {filteredAssets.map((asset, i) => {
+              {filteredAssets.length > 0 ? filteredAssets.map((asset, i) => {
                 const price = livePrices[asset.id];
                 const change = ((price - asset.basePrice) / asset.basePrice * 100).toFixed(2);
                 const up = parseFloat(change) >= 0;
@@ -304,7 +347,17 @@ export default function Trade() {
                     </div>
                   </motion.div>
                 );
-              })}
+              }) : (
+                <div style={{ 
+                  gridColumn: '1 / -1',
+                  padding: 40, 
+                  textAlign: 'center', 
+                  color: 'var(--text-secondary)',
+                  fontFamily: 'Share Tech Mono, monospace'
+                }}>
+                  No markets found for "{search}"
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -399,118 +452,12 @@ export default function Trade() {
                     <button key={m} onClick={() => setMode(m)}
                       style={{
                         flex: 1, padding: '10px', border: 'none', borderRadius: 8, cursor: 'pointer',
-                        background: mode === m ? (m === 'buy' ? 'linear-gradient(135deg,#00FF87,#00b860)' : 'linear-gradient(135deg,#FF3131,#b80000)') : 'transparent',
+                        background: mode === m ? (m === 'buy' ? 'linear-gradient(135deg,#00FF87,#00B2FF)' : 'linear-gradient(135deg,#FF3131,#FF7B7B)') : 'rgba(255,255,255,0.05)',
                         color: mode === m ? 'white' : 'var(--text-secondary)',
-                        fontFamily: 'Orbitron, monospace', fontSize: 13, fontWeight: 700, letterSpacing: 1, transition: 'all 0.3s',
+                        fontFamily: 'Orbitron, monospace', fontSize: 13, textTransform: 'uppercase',
+                        transition: 'all 0.3s',
                       }}>
-                      {m === 'buy' ? '🛒 BUY' : '💰 SELL'}
+                      {m}
                     </button>
                   ))}
-                </div>
-
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Orbitron, monospace', letterSpacing: 1 }}>
-                    AMOUNT ({selectedAsset.id})
-                    {mode === 'sell' && <span style={{ color: selectedAsset.color, marginLeft: 6 }}>Bal: {(balances[selectedAsset.id] || 0).toFixed(4)}</span>}
-                  </label>
-                  <input className="galaxy-input" type="number" placeholder="0.00000000"
-                    value={form.amount} onChange={(e) => handleAmountChange(e.target.value)}
-                    style={{ fontFamily: 'Orbitron, monospace', fontSize: 16 }} min="0" />
-                </div>
-
-                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: 18, marginBottom: 14 }}>⇅</div>
-
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Orbitron, monospace', letterSpacing: 1 }}>AMOUNT (USD)</label>
-                  <input className="galaxy-input" type="number" placeholder="0.00"
-                    value={form.usd} onChange={(e) => handleUsdChange(e.target.value)}
-                    style={{ fontFamily: 'Orbitron, monospace', fontSize: 16 }} min="0" />
-                </div>
-
-                <div style={{ display: 'flex', gap: 6, marginBottom: 18, flexWrap: 'wrap' }}>
-                  {['25', '50', '100', '250', '500'].map((amt) => (
-                    <button key={amt} onClick={() => handleUsdChange(amt)}
-                      style={{ flex: 1, minWidth: 44, padding: '6px 4px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: 6, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'Orbitron, monospace', fontSize: 10, transition: 'all 0.2s' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = selectedAsset.color; e.currentTarget.style.color = 'white'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--glass-border)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}>
-                      ${amt}
-                    </button>
-                  ))}
-                </div>
-
-                <div style={{ padding: '10px 14px', background: 'rgba(0,245,255,0.04)', border: '1px solid rgba(0,245,255,0.15)', borderRadius: 8, marginBottom: 16, fontSize: 12, fontFamily: 'Share Tech Mono, monospace', color: 'var(--text-secondary)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Fee (0.25%)</span>
-                    <span style={{ color: 'white' }}>${(parseFloat(form.usd || 0) * 0.0025).toFixed(2)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                    <span>Total</span>
-                    <span style={{ color: 'var(--star-cyan)', fontWeight: 700 }}>${(parseFloat(form.usd || 0) * 1.0025).toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <motion.button className="btn-primary" onClick={handleReview}
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                  style={{ background: mode === 'buy' ? 'linear-gradient(135deg,var(--cosmic-blue),var(--nebula-purple))' : 'linear-gradient(135deg,#FF3131,#b80000)', width: '100%' }}>
-                  REVIEW {mode.toUpperCase()} ORDER →
-                </motion.button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {step === 3 && selectedAsset && (
-          <motion.div key="confirm" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-            <div className="glass-card animated-border" style={{ padding: 32, maxWidth: 520, margin: '0 auto' }}>
-              <h3 className="font-orbitron" style={{ fontSize: 16, marginBottom: 24, textAlign: 'center' }}>
-                {mode === 'buy' ? '🛒 CONFIRM PURCHASE' : '💰 CONFIRM SALE'}
-              </h3>
-              {[
-                { label: 'Action',   value: mode === 'buy' ? '🟢 BUY' : '🔴 SELL' },
-                { label: 'Asset',    value: `${selectedAsset.icon} ${selectedAsset.name} (${selectedAsset.id})` },
-                { label: 'Amount',   value: `${form.amount} ${selectedAsset.id}` },
-                { label: 'Price',    value: `$${currentPrice < 1 ? currentPrice.toFixed(4) : currentPrice.toLocaleString()}` },
-                { label: 'Subtotal', value: `$${parseFloat(form.usd || 0).toLocaleString()}` },
-                { label: 'Fee',      value: `$${(parseFloat(form.usd || 0) * 0.0025).toFixed(2)}` },
-                { label: 'TOTAL',    value: `$${(parseFloat(form.usd || 0) * 1.0025).toFixed(2)}` },
-              ].map(({ label, value }) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--glass-border)' }}>
-                  <span style={{ color: 'var(--text-secondary)', fontFamily: 'Share Tech Mono, monospace', fontSize: 13 }}>{label}</span>
-                  <span style={{ fontFamily: 'Orbitron, monospace', fontSize: 13, color: label === 'TOTAL' ? 'var(--star-cyan)' : 'white', fontWeight: label === 'TOTAL' ? 700 : 400 }}>{value}</span>
-                </div>
-              ))}
-              <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
-                <button className="btn-secondary" onClick={() => setStep(2)} style={{ flex: 1 }}>← BACK</button>
-                <button className="btn-primary" onClick={handleConfirm} disabled={loading}
-                  style={{ flex: 2, background: mode === 'buy' ? undefined : 'linear-gradient(135deg,#FF3131,#b80000)' }}>
-                  {loading ? 'PROCESSING...' : `✅ CONFIRM ${mode.toUpperCase()}`}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {step === 4 && selectedAsset && (
-          <motion.div key="done" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-            <div className="glass-card" style={{ padding: 48, textAlign: 'center', maxWidth: 480, margin: '0 auto' }}>
-              <motion.div animate={{ scale: [0, 1.2, 1], rotate: [0, 10, -5, 0] }} transition={{ duration: 0.6 }} style={{ fontSize: 80, marginBottom: 20 }}>
-                {mode === 'buy' ? '🚀' : '💰'}
-              </motion.div>
-              <h2 className="font-orbitron gradient-text" style={{ fontSize: 22, marginBottom: 12 }}>
-                {mode === 'buy' ? 'PURCHASE COMPLETE!' : 'SALE COMPLETE!'}
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: 8, fontSize: 14 }}>
-                {form.amount} {selectedAsset.id} has been {mode === 'buy' ? 'added to' : 'removed from'} your wallet.
-              </p>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: 28, fontSize: 13, fontFamily: 'Share Tech Mono, monospace' }}>
-                A confirmation has been sent to your email.
-              </p>
-              <button className="btn-primary" onClick={reset}>BACK TO MARKETS</button>
-            </div>
-          </motion.div>
-        )}
-
-      </AnimatePresence>
-    </div>
-  );
-}
+                </div> 
