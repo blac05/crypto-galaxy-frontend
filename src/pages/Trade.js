@@ -160,11 +160,11 @@ export default function Trade() {
       setChartData(generateChartData(livePrices[selectedAsset.id], points, vol));
       setLivePrice(livePrices[selectedAsset.id]);
     }
-  }, [selectedAsset, chartRange]);
+  }, [selectedAsset, chartRange, livePrices]);
 
   useEffect(() => {
     if (selectedAsset) setLivePrice(livePrices[selectedAsset.id]);
-  }, [livePrices]);
+  }, [livePrices, selectedAsset]);
 
   const filteredAssets = ALL_ASSETS.filter(a => {
     const matchesTab =
@@ -229,12 +229,11 @@ export default function Trade() {
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 24 }}>
         <h1 className="font-orbitron" style={{ fontSize: 24, marginBottom: 6 }}>📈 Markets</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Trade crypto, stocks & commodities across the galaxy</p>
-      </motion.div> {/* FIX: was </motion.divdiv> */}
+      </motion.div>
 
-      <PendingTransactionBanner /> 
+      <PendingTransactionBanner />
 
-      <AnimatePresence mode="wait"> 
-
+      <AnimatePresence mode="wait">
         {step === 1 && (
           <motion.div key="market" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'relative' }}>
             <AccountLockedOverlay />
@@ -256,7 +255,7 @@ export default function Trade() {
               ))}
             </div>
 
-            {/* Search bar positioned after commodities */}
+            {/* Search bar */}
             <div style={{ marginBottom: 20, position: 'relative' }}>
               <input
                 className="galaxy-input"
@@ -449,15 +448,221 @@ export default function Trade() {
               <div className="glass-card" style={{ padding: 24, height: 'fit-content' }}>
                 <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 4, marginBottom: 20 }}>
                   {['buy', 'sell'].map((m) => (
-                    <button key={m} onClick={() => setMode(m)}
+                    <button 
+                      key={m} 
+                      onClick={() => setMode(m)}
                       style={{
-                        flex: 1, padding: '10px', border: 'none', borderRadius: 8, cursor: 'pointer',
-                        background: mode === m ? (m === 'buy' ? 'linear-gradient(135deg,#00FF87,#00B2FF)' : 'linear-gradient(135deg,#FF3131,#FF7B7B)') : 'rgba(255,255,255,0.05)',
+                        flex: 1, 
+                        padding: '10px', 
+                        border: 'none', 
+                        borderRadius: 8, 
+                        cursor: 'pointer',
+                        background: mode === m 
+                          ? (m === 'buy' 
+                              ? 'linear-gradient(135deg,#00FF87,#00B2FF)' 
+                              : 'linear-gradient(135deg,#FF3131,#FF7B7B)')
+                          : 'rgba(255,255,255,0.05)',
                         color: mode === m ? 'white' : 'var(--text-secondary)',
-                        fontFamily: 'Orbitron, monospace', fontSize: 13, textTransform: 'uppercase',
-                        transition: 'all 0.3s',
+                        fontFamily: 'Orbitron, monospace', 
+                        fontSize: 13,
+                        transition: 'all 0.3s'
                       }}>
-                      {m}
+                      {m.toUpperCase()}
                     </button>
                   ))}
-                </div> 
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Orbitron, monospace' }}>
+                    {mode === 'buy' ? 'YOU PAY' : 'YOU RECEIVE'}
+                  </div>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>$</span>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={form.usd}
+                      onChange={(e) => handleUsdChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '14px 14px 14px 32px',
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid var(--glass-border)',
+                        borderRadius: 10,
+                        color: 'white',
+                        fontFamily: 'Share Tech Mono, monospace',
+                        fontSize: 18,
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Orbitron, monospace' }}>
+                    {mode === 'buy' ? 'YOU GET' : 'YOU SELL'}
+                  </div>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>{selectedAsset.icon}</span>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={form.amount}
+                      onChange={(e) => handleAmountChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '14px 14px 14px 40px',
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid var(--glass-border)',
+                        borderRadius: 10,
+                        color: 'white',
+                        fontFamily: 'Share Tech Mono, monospace',
+                        fontSize: 18,
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ padding: '12px 0', borderTop: '1px solid var(--glass-border)', marginBottom: 20 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Market Price</span>
+                    <span style={{ color: 'white', fontFamily: 'Share Tech Mono, monospace' }}>${currentPrice.toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Available Balance</span>
+                    <span style={{ color: 'white', fontFamily: 'Share Tech Mono, monospace' }}>
+                      {mode === 'buy' 
+                        ? `$${balances.usd?.toLocaleString() || '0.00'}`
+                        : `${(balances[selectedAsset.id] || 0).toFixed(8)} ${selectedAsset.id}`}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleReview}
+                  disabled={!form.amount || parseFloat(form.amount) <= 0}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    border: 'none',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    background: mode === 'buy'
+                      ? 'linear-gradient(135deg, #00FF87, #00B2FF)'
+                      : 'linear-gradient(135deg, #FF3131, #FF7B7B)',
+                    color: 'white',
+                    fontFamily: 'Orbitron, monospace',
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    opacity: !form.amount || parseFloat(form.amount) <= 0 ? 0.5 : 1,
+                    transition: 'all 0.3s'
+                  }}>
+                  REVIEW {mode.toUpperCase()} ORDER
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 3 && selectedAsset && (
+          <motion.div key="confirm" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+            <div className="glass-card" style={{ maxWidth: 500, margin: '0 auto', padding: 32 }}>
+              <h2 style={{ fontFamily: 'Orbitron, monospace', fontSize: 20, marginBottom: 20, textAlign: 'center' }}>
+                Confirm {mode.toUpperCase()} Order
+              </h2>
+              
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--glass-border)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Asset</span>
+                  <span style={{ color: 'white', fontWeight: 'bold' }}>{selectedAsset.name} ({selectedAsset.id})</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--glass-border)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{mode === 'buy' ? 'Amount to Pay' : 'Amount to Receive'}</span>
+                  <span style={{ color: 'white', fontFamily: 'Share Tech Mono, monospace' }}>${parseFloat(form.usd).toLocaleString()}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--glass-border)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{mode === 'buy' ? 'Amount to Receive' : 'Amount to Sell'}</span>
+                  <span style={{ color: 'white', fontFamily: 'Share Tech Mono, monospace' }}>{parseFloat(form.amount).toFixed(8)} {selectedAsset.id}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--glass-border)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Price</span>
+                  <span style={{ color: 'white', fontFamily: 'Share Tech Mono, monospace' }}>${currentPrice.toLocaleString()}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Total {mode === 'buy' ? 'Debit' : 'Credit'}</span>
+                  <span style={{ color: mode === 'buy' ? '#FF3131' : '#00FF87', fontWeight: 'bold', fontSize: 18 }}>
+                    ${parseFloat(form.usd).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => setStep(2)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: 10,
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontFamily: 'Orbitron, monospace'
+                  }}>
+                  BACK
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  disabled={loading}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    border: 'none',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    background: mode === 'buy'
+                      ? 'linear-gradient(135deg, #00FF87, #00B2FF)'
+                      : 'linear-gradient(135deg, #FF3131, #FF7B7B)',
+                    color: 'white',
+                    fontFamily: 'Orbitron, monospace',
+                    fontWeight: 'bold',
+                    opacity: loading ? 0.7 : 1
+                  }}>
+                  {loading ? 'PROCESSING...' : `CONFIRM ${mode.toUpperCase()}`}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 4 && (
+          <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+            <div className="glass-card" style={{ maxWidth: 500, margin: '0 auto', padding: 40, textAlign: 'center' }}>
+              <div style={{ fontSize: 64, marginBottom: 16 }}>🎉</div>
+              <h2 style={{ fontFamily: 'Orbitron, monospace', fontSize: 24, marginBottom: 12, color: '#00FF87' }}>
+                Order Executed!
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
+                You successfully {mode === 'buy' ? 'purchased' : 'sold'} {parseFloat(form.amount).toFixed(8)} {selectedAsset?.id}
+              </p>
+              <button
+                onClick={reset}
+                style={{
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, var(--cosmic-blue), var(--nebula-purple))',
+                  border: 'none',
+                  borderRadius: 10,
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontFamily: 'Orbitron, monospace'
+                }}>
+                CONTINUE TRADING
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
